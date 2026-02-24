@@ -1,5 +1,9 @@
 venv/
 
+.Rhistory
+.RData
+.Rproj.user/
+
 __pycache__/
 *.py[cod]
 
