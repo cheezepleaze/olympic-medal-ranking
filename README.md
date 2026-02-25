@@ -10,7 +10,7 @@ This project builds a flexible ranking system that varies medal weights, changin
 ## Methodology
 
 Define a weighted medal score:
-$ Score = (w_g × Gold) + (w_s × Silver) + (w_b × Bronze) $
+$$ Score = (w_g × Gold) + (w_s × Silver) + (w_b × Bronze) $$
 
 The project evaluates:
 - Fixed scoring systems (e.g., gold-priority, gold-heavy, total medals)
@@ -29,7 +29,7 @@ Data is sourced from publicly available Olympic medal datasets.
 
 ## Current Status
 
-### Data collection and cleaning
-- [x] 2026 Winter Olympics data collected and cleaned
-- [ ] 2024 Summer Olympics data collection
-- [ ] Visualization
+### Data wrangling
+- [x] 2026 Winter Olympics data
+- [x] 2024 Summer Olympics data
+- [ ] Exploratory Data Analysis
