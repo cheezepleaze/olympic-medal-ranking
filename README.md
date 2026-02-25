@@ -10,7 +10,10 @@ This project builds a flexible ranking system that varies medal weights, changin
 ## Methodology
 
 Define a weighted medal score:
-$$ Score = (w_g × Gold) + (w_s × Silver) + (w_b × Bronze) $$
+
+$$
+Score = (w_g × Gold) + (w_s × Silver) + (w_b × Bronze)
+$$
 
 The project evaluates:
 - Fixed scoring systems (e.g., gold-priority, gold-heavy, total medals)
@@ -22,7 +25,7 @@ Data is sourced from publicly available Olympic medal datasets.
 ## Goals
 
 - Build a reproducible medal ranking model
-- Create an interactive visualization (Streamlit or Tableau)
+- Create an interactive visualization (Tableau)
 - Analyze ranking sensitivity to medal weight assumptions
 - Identify countries that dominate across most scoring systems
 - Quantify thresholds where rankings change
