@@ -12,7 +12,7 @@ This project builds a flexible ranking system that varies medal weights, changin
 Define a weighted medal score:
 
 $$
-Score = (w_g × Gold) + (w_s × Silver) + (w_b × Bronze)
+Score = (w_g  ×  Gold) + (w_s  ×  Silver) + (w_b  ×  Bronze)
 $$
 
 The project evaluates:

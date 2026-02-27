@@ -10,7 +10,7 @@ scrape_wiki_medal_table <- function(url, games_label, table_index = 3) {
   read_html(url) %>%
     html_table(fill = TRUE) %>%
     .[[table_index]] %>%
-    rename(Team = NOC) %>%
+    rename_with(~ c("Rank", "Team", "Gold", "Silver", "Bronze", "Total")) %>% # hard rename due to HTML/CSS artifacts
     select(-Rank) %>% # remove "Rank" column, re-ranking based on strategy
     filter(!str_detect(Team, "^Totals")) %>%
     mutate(
@@ -71,24 +71,87 @@ rank_gold_priority <- function(medals_data) {
     ungroup()
 }
 
-rank_count <- rank_countries(w26_medals, weights_equal[1], weights_equal[2], weights_equal[3])
-rank_gold_only <- w26_medals %>%
-  arrange(desc(Gold), desc(Silver), desc(Bronze)) %>%
-  mutate(rank_gold_only = row_number())
-rank_gold_heavy <- rank_countries(w26_medals, weights_gold_heavy[1], weights_gold_heavy[2], weights_gold_heavy[3])
+weights_equal      <- c(1, 1, 1)
+weights_gold_heavy <- c(5, 2, 1)
+
+ranking_totals <- rank_countries(w26_medals, weights_equal[1], weights_equal[2], weights_equal[3])
+ranking_gold_prio <- rank_gold_priority(w26_medals)
+ranking_gold_only <- rank_countries(w26_medals, 1, 0, 0)
+ranking_gold_heavy <- rank_countries(w26_medals, weights_gold_heavy[1], weights_gold_heavy[2], weights_gold_heavy[3])
 
 # compare rankings, noting delta from total counts to gold-only and gold-heavy priorities
-comparison <- rank_count %>%
-  select(Team, rank_equal = rank, score_equal = score) %>%
+comparison <- ranking_gold_prio %>%
+  select(Team, rank_gold_priority = rank) %>%
   left_join(
-    rank_gold_heavy %>% select(Team, rank_gold_heavy = rank, score_gold_heavy = score),
+    rank_count %>% select(Team, rank_totals = rank),
     by = "Team"
   ) %>%
   left_join(
-    rank_gold_only %>% select(Team, rank_gold_only),
+    rank_gold_only %>% select(Team, rank_gold_only = rank),
+    by = "Team"
+  ) %>%
+  left_join(
+    rank_gold_heavy %>% select(Team, rank_gold_heavy = rank),
     by = "Team"
   ) %>%
   mutate(
-    delta_gold_only = rank_gold_only - rank_equal,
-    delta_gold_heavy = rank_gold_heavy - rank_equal
+    delta_total_count = rank_totals - rank_gold_priority,
+    delta_gold_only = rank_gold_only - rank_gold_priority,
+    delta_gold_heavy = rank_gold_heavy - rank_gold_priority
   )
+
+# tidy and reshape data from wide to long
+comparison_long <- comparison %>%
+  select(Team, rank_gold_priority, rank_totals, rank_gold_heavy) %>%
+  pivot_longer(cols = starts_with("rank"), names_to = "philosophy", values_to = "rank") %>%
+  mutate(
+    philosophy = factor(
+      philosophy, 
+      levels = c("rank_gold_priority", "rank_totals", "rank_gold_heavy")
+    )
+  )
+
+# messy visualization with all teams
+ggplot(comparison_long, aes(x = philosophy, y = rank, group = Team)) +
+  geom_line(aes(color = Team)) +
+  geom_point(aes(color = Team)) +
+  geom_text_repel(aes(label = Team), size = 3, show.legend = FALSE) +
+  scale_y_reverse() +  # rank 1 at top
+  theme_minimal() +
+  theme(legend.position = "none") +
+  labs(title = "Rank Changes by Medal Weighting Philosophy",
+       y = "Rank", x = "Weighting Philosophy")
+
+# reduce team selection for cleaner visualization
+top15 <- comparison |>
+  arrange(rank_gold_heavy) |>
+  slice_head(n = 15) |>
+  pull(Team)
+
+top15_long <- comparison_long |>
+  filter(Team %in% top15)
+
+# "cleaner" proof-of-concept visualization with fewer teams
+ggplot(top15_long, aes(x = philosophy, y = rank, group = Team)) +
+  geom_line(aes(color = Team)) +
+  geom_point(aes(color = Team)) +
+  geom_text_repel(
+    data = top15_long |> filter(philosophy == "rank_gold_priority"),
+    aes(label = Team),
+    hjust = 1,
+    nudge_x = -0.1,
+    direction = "y",
+    segment.color = NA
+  ) +
+  geom_text_repel(
+    data = top15_long |> filter(philosophy == "rank_gold_heavy"),
+    aes(label = Team),
+    hjust = 0,
+    nudge_x = 0.1,
+    direction = "y",
+    force = 0.01,
+    segment.color = NA
+  ) +
+  scale_y_reverse() +
+  theme_minimal() +
+  theme(legend.position = "none")
